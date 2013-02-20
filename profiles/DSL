@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Profile for a DSL connection
+profile_desc="DSL"
+declare -A profile
+profile["delay"]="10ms 5ms distribution normal"
+profile["rate"]="2mbps buffer 512kb latency 1ms"
+profile["loss"]="0%"

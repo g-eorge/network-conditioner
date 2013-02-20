@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Profile for a Cable Modem connection
+profile_desc="Cable Modem"
+declare -A profile
+profile["delay"]="4ms 1ms distribution normal"
+profile["rate"]="6mbps buffer 512kb latency 1ms"
+profile["loss"]="0%"

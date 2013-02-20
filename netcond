@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+
+# This tool lets you simulate network conditions that are found in real WANs.
+#
+# Requires iproute2 and IFB support. Tested on Ubuntu 12.10 only.
+
+# what is the user trying to do?
+action=$1
+
+# which interface do they want to do it on?
+dev=$2
+
+# which ifb device to use
+ifbdev="ifb0"
+
+# get the absolute path to the current dir
+current_dir=$(dirname $0)
+current_dir=$( cd $current_dir && pwd )
+
+usage() {
+	echo -e "Usage:\tnetcond start [interface] [profile]"
+	echo -e "\tnetcond stop [interface]"
+	echo -e "\tnetcond stats"
+	echo
+	echo -e "Where:\t[interface] := the network interface to use e.g. lo, eth0 or wlan0"
+	echo -e "\t[profile] := the profile to use (must exist in the profiles directory)"
+	echo
+	echo -e "Note:\tYou will probably need to run this with sudo."
+}
+
+# output messages nicely
+log() {
+	msg=$1
+	now=$(date)
+	echo "[${now}] ${1}"
+}
+
+# we need the IFB module to control incoming packets
+check_ifb_mod() {
+	log "Checking for Intermediate Functional Block pseudo-device..."
+	result=0
+	if [ -n $(modprobe -l ifb) ]; then
+		modprobe ifb
+		log "ifb module installed."
+	else
+		log "ifb module not installed, stopping."
+		result=1
+	fi
+	return $result
+}
+
+# load the profile settings if needed
+if [ $# -eq 3 ]; then
+	profile_file="${current_dir}/profiles/${3}"
+	log "Loading profile from ${profile_file}..."
+	source $profile_file 2> /dev/null
+	if [ $? -gt 0 ]; then
+		log "Loading profile ${3} went wrong. Does it exist?"
+		exit 1
+	else
+		log "Loaded profile: ${profile_desc}."
+	fi
+fi
+
+# set up a ifb pseudo-device so we can control incoming as well as outgoing traffic
+set_link_up() {
+	log "Setting link ${ifbdev} up..."
+	ip link set dev $ifbdev up
+	up=$?
+	tc qdisc add dev $dev ingress 2> /dev/null
+	tc filter add dev $dev parent ffff: \
+		protocol ip u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev $ifbdev 2> /dev/null
+	return $up
+}
+
+# remove the traffic control policy and shut down the ifb
+set_link_down() {
+	log "Setting link ${ifbdev} down..."
+	tc qdisc del dev $dev root 2> /dev/null
+	tc qdisc del dev $dev ingress 2> /dev/null
+	tc qdisc del dev $ifbdev root 2> /dev/null
+	tc qdisc del dev $ifbdev ingress 2> /dev/null
+	ip link set dev $ifbdev down
+	return $?
+}
+
+# set the simulated network conditions
+set_network_condition() {
+	delay=$1
+	rate=$2
+	loss=$3
+	log "Setting delay: ${delay}"
+	log "Setting rate: ${rate}"
+	log "Setting loss: ${loss}"
+	# set the delay
+	tc qdisc add dev $ifbdev root handle 1:0 netem delay $delay 2> /dev/null
+	# set the rate
+	tc qdisc add dev $ifbdev parent 1:1 handle 10: tbf rate $rate 2> /dev/null
+	# set the random packet loss
+	tc qdisc change dev $ifbdev root netem loss $loss 2> /dev/null
+}
+
+
+start() {
+	if check_ifb_mod; then
+		if set_link_up; then
+			set_network_condition "${profile[delay]}" "${profile[rate]}" "${profile[loss]}"
+			log "Started link on ${dev}."
+		else
+			log "Couldn't start link on ${dev}. Maybe it's already running?"
+			exit 1
+		fi
+	else 
+		exit 1
+	fi
+}
+
+stop() {
+	if set_link_down; then 
+		log "Stopped link on ${dev}"
+	else
+		log "Couldn't stop link on ${dev}. Maybe it's not running?"
+	fi
+}
+
+stats() {
+	tc -s -d qdisc ls dev $ifbdev
+}
+
+case $1 in
+start)	
+	if [ $# -lt 2 ]; then
+		usage
+		exit 1
+	fi
+	start
+	;;
+stop)	
+	if [ $# -lt 2 ]; then
+		usage
+		exit 1
+	fi
+	stop
+	;;
+stats)	stats
+	;;
+*)	usage
+	exit 1
+	;;
+esac
+
+exit 0

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Profile for a average 3G connection
+profile_desc="3G - average connectivity"
+declare -A profile
+profile["delay"]="100ms 90ms distribution normal"
+profile["rate"]="780kbps buffer 512kb latency 1ms"
+profile["loss"]="0%"

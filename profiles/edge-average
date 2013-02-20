@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Profile for a average Edge connection
+profile_desc="Edge - average connectivity"
+declare -A profile
+profile["delay"]="400ms 350ms distribution normal"
+profile["rate"]="240kbps buffer 512kb latency 1ms"
+profile["loss"]="0%"

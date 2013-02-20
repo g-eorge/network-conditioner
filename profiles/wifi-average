@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Profile for a average wifi connection
+profile_desc="Wifi - average connectivity"
+declare -A profile
+profile["delay"]="2ms 1ms distribution normal"
+profile["rate"]="40mbps buffer 512kb latency 1ms"
+profile["loss"]="0%"

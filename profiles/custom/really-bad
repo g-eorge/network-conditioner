@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Profile for a really bad connection (useful for testing the traffic shaping is working)
+profile_desc="Really bad connectivity"
+declare -A profile
+profile["delay"]="3000ms 1000ms distribution normal"
+profile["rate"]="50kbps buffer 128kb latency 10ms"
+profile["loss"]="10%"
