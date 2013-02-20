@@ -52,7 +52,7 @@ check_ifb_mod() {
 # load the profile settings if needed
 if [ $# -eq 3 ]; then
 	profile_file="${current_dir}/profiles/${3}"
-	log "Loading profile from ${profile_file}..."
+	log "Loading profile from ${profile_file}"
 	source $profile_file 2> /dev/null
 	if [ $? -gt 0 ]; then
 		log "Loading profile ${3} went wrong. Does it exist?"
@@ -124,7 +124,7 @@ stop() {
 }
 
 stats() {
-	tc -s -d qdisc ls dev $ifbdev
+	tc -s -d qdisc
 }
 
 case $1 in

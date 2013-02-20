@@ -19,14 +19,19 @@ Note   You will probably need to run this with sudo
 
 ## Example
 ```
+# simulate a wifi network that is unstable on eth0
 sudo ./netcond start eth0 wifi-lossy
+
+# view some tc statistics
 sudo ./netcond stats
+
+# stop the simulation and clean up
 sudo ./netcond stop eth0
 ```
 
 ## Future enhancements
 
-- [ ] make ingress and egress traffic shaping separately configurable to simulate asymetric upload and download performance
+- [ ] make ingress and egress traffic shaping separately configurable to simulate asymetric upload and download
 
 ## References
 
