@@ -67,9 +67,18 @@ set_link_up() {
 	log "Setting link ${ifbdev} up..."
 	ip link set dev $ifbdev up
 	up=$?
-	tc qdisc add dev $dev ingress 2> /dev/null
-	tc filter add dev $dev parent ffff: \
+	
+	# set up an ingress queue discipline
+	tc qdisc add dev $dev ingress handle 1:2 2> /dev/null
+
+	# send ssh packets direct to the interface
+	tc filter add dev $dev parent ffff: prio 1 \
+		protocol ip u32 match ip dport 22 0xffff flowid 1:2 2> /dev/null
+
+	# redirect everything else through the ifb
+	tc filter add dev $dev parent ffff: prio 2 \
 		protocol ip u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev $ifbdev 2> /dev/null
+
 	return $up
 }
 
@@ -92,12 +101,14 @@ set_network_condition() {
 	log "Setting delay: ${delay}"
 	log "Setting rate: ${rate}"
 	log "Setting loss: ${loss}"
+
 	# set the delay
 	tc qdisc add dev $ifbdev root handle 1:0 netem delay $delay 2> /dev/null
 	# set the rate
 	tc qdisc add dev $ifbdev parent 1:1 handle 10: tbf rate $rate 2> /dev/null
 	# set the random packet loss
 	tc qdisc change dev $ifbdev root netem loss $loss 2> /dev/null
+
 }
 
 
