@@ -36,6 +36,7 @@ sudo ./netcond stop eth0
 ## References
 
 * http://www.lartc.org/
+* http://lartc.org/lartc.html#LARTC.QDISC
 * http://lartc.org/wondershaper/
 * http://www.linuxfoundation.org/collaborate/workgroups/networking/netem
 * http://www.linuxfoundation.org/collaborate/workgroups/networking/ifb
